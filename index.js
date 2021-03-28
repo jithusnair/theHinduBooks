@@ -1,18 +1,21 @@
 const { chromium } = require('playwright');
 const fetch = require('node-fetch');
 // add db later
-// const {dbInsert} = require('./database');
+const {dbInsert} = require('./database');
 
 (async () => {
     const browser = await chromium.launch();
-    await getBooksData(browser, 5);    
+    await getBooksData(browser, 2, 1);    
     await browser.close();
 })();
 
-async function getBooksData(browser, searchDepth) {
+async function getBooksData(browser,stopPage, startPage = 1) {
+    if(startPage < 1) {
+        console.error("Start page cannot be less than 1");
+        return
+    }
     let allbrowserContextPromises = [];
-    let t1 = Date.now();
-    for (let i = 0; i < searchDepth; i++) {
+    for (let i = startPage - 1; i < stopPage; i++) {
         allbrowserContextPromises.push(browser.newContext());
     }
     return Promise.all(allbrowserContextPromises)
@@ -33,9 +36,12 @@ async function getBooksData(browser, searchDepth) {
     .then((values)=> {
         values = values.reduce(((accumulator, currentValue) => accumulator.concat(currentValue)), []);
         console.log("Total books fetched:", values.length);
-        console.log("Time taken: ", Date.now() - t1);
         return values;
-    }).catch((error) => {
+    })
+    .then(async (docs)=> {
+        await dbInsert(docs, 'books');
+    })
+    .catch((error) => {
         console.error(error);
     });
 }
@@ -49,7 +55,6 @@ async function getReviewedBooksInOnePage(pageObj, pageNumber) {
     let booksDataOnOnePage = await parsePageLinks(bookLinks);
     docs = docs.concat(booksDataOnOnePage);
     return docs;
-    // await dbInsert(docs, 'books');
 }
 
 function nextPageLink(pageNumber) {
@@ -69,7 +74,6 @@ async function parsePageLinks(bookLinks) {
         if(name) {
             let bookData = await booksApi(name);
             let cleanData = cleanUpGoogleBookData(bookData)
-            // console.log(cleanData);
             bookDataOnOnePage.push(cleanData);
         }
     }
