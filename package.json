@@ -1,0 +1,19 @@
+{
+  "name": "book_review_scraping",
+  "version": "0.1.0",
+  "description": "A scraping tool to scrape books reviewed by The Hindu newspaper",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jithu S Nair",
+  "license": "MIT",
+  "dependencies": {
+    "arangojs": "^7.3.0",
+    "node-fetch": "^2.6.1"
+  },
+  "devDependencies": {
+    "playwright": "^1.9.2"
+  }
+}
