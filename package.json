@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "A scraping tool to scrape books reviewed by The Hindu newspaper",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -12,9 +13,7 @@
   "dependencies": {
     "arangojs": "^7.3.0",
     "dotenv": "^8.2.0",
-    "node-fetch": "^2.6.1"
-  },
-  "devDependencies": {
-    "playwright": "^1.9.2"
+    "node-fetch": "^2.6.1",
+    "playwright": "^1.10.0"
   }
 }
