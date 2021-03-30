@@ -1,15 +1,16 @@
-import {firefox} from 'playwright';
+import {chromium} from 'playwright';
 import fetch from 'node-fetch';
 import {dbInsert, dbRemoveAll} from './database.js';
 
 (async () => {
     await dbRemoveAll('books');
-    const browser = await firefox.launch();
-    await getBooksData(browser, 10);  
+    const browser = await chromium.launch();
+    const context = await browser.newContext();
+    await getBooksData(context, 10);  
     await browser.close();
 })();
 
-async function getBooksData(browser,stopPage = 1, startPage = 1) {
+async function getBooksData(context, stopPage = 1, startPage = 1) {
     if(startPage < 1 || stopPage < 1) {
         console.error("Start/stop page cannot be less than 1");
         return
@@ -18,8 +19,7 @@ async function getBooksData(browser,stopPage = 1, startPage = 1) {
     }
     let allPagePromises = [];
     for (let i = startPage - 1; i < stopPage; i++) {
-        let context = await browser.newContext();
-        let page = await context.newPage(); 
+        let page = await context.newPage();
         allPagePromises.push(getReviewedBooksInOnePage(page, startPage + i));
     }
     return Promise.all(allPagePromises)
