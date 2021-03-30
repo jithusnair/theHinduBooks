@@ -1,17 +1,16 @@
-const arango = require('arangojs');
-const {DATABASENAME, USERNAME, PASSWORD, URL} = require('./config');
+import arango from 'arangojs';
+import env  from './config.js';
 
 const Database = arango.Database;
-const aql = arango.aql;
 
 // connect to database instance
 const db = new Database({
-    url: URL, 
-    databaseName: DATABASENAME,
-    auth: {username: USERNAME, password: PASSWORD}
+    url: env.URL, 
+    databaseName: env.DATABASENAME,
+    auth: {username: env.USERNAME, password: env.PASSWORD}
 });
 
-async function dbInsert(docs, collection) {
+export async function dbInsert(docs, collection) {
     let cursor = await db.query({
         query: `
         FOR book IN @docs
@@ -21,13 +20,10 @@ async function dbInsert(docs, collection) {
             docs: docs,
             "@collection": collection 
         }
-    });        
-    // cursor.forEach(function (book) {
-    //     console.log(book);
-    // });
+    });
 }
 
-async function dbRemoveAll(collection) {
+export async function dbRemoveAll(collection) {
     await db.query({
         query: `
         FOR book IN @@collection
@@ -36,13 +32,5 @@ async function dbRemoveAll(collection) {
         bindVars: { 
             "@collection": collection 
         }
-    });        
-    // cursor.forEach(function (book) {
-    //     console.log(book);
-    // });
+    });
 }
-
-module.exports = {
-    dbInsert,
-    dbRemoveAll
-};

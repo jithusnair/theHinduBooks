@@ -1,12 +1,11 @@
-const { chromium } = require('playwright');
-const fetch = require('node-fetch');
-// add db later
-const {dbInsert, dbRemoveAll} = require('./database');
+import {firefox} from 'playwright';
+import fetch from 'node-fetch';
+import {dbInsert, dbRemoveAll} from './database.js';
 
 (async () => {
     await dbRemoveAll('books');
-    const browser = await chromium.launch();
-    await getBooksData(browser);    
+    const browser = await firefox.launch();
+    await getBooksData(browser, 10);  
     await browser.close();
 })();
 
@@ -14,26 +13,16 @@ async function getBooksData(browser,stopPage = 1, startPage = 1) {
     if(startPage < 1 || stopPage < 1) {
         console.error("Start/stop page cannot be less than 1");
         return
+    } else if (stopPage < startPage) {
+        console.error("Stop page cannot be less than Start page")
     }
-    let allbrowserContextPromises = [];
+    let allPagePromises = [];
     for (let i = startPage - 1; i < stopPage; i++) {
-        allbrowserContextPromises.push(browser.newContext());
+        let context = await browser.newContext();
+        let page = await context.newPage(); 
+        allPagePromises.push(getReviewedBooksInOnePage(page, startPage + i));
     }
-    return Promise.all(allbrowserContextPromises)
-    .then((contexts) => {
-        let pagePromises = [];
-        for (let i = 0; i < contexts.length; i++) {
-            pagePromises.push(contexts[i].newPage());
-        }
-        return Promise.all(pagePromises)
-    })
-    .then((pages) => {
-        let allPagePromises = [];
-        for (let i = 0; i < pages.length; i++) {
-            allPagePromises.push(getReviewedBooksInOnePage(pages[i], startPage + i));
-        }
-        return Promise.all(allPagePromises)
-    })
+    return Promise.all(allPagePromises)
     .then((values)=> {
         values = values.reduce(((accumulator, currentValue) => accumulator.concat(currentValue)), []);
         console.log("Total books fetched:", values.length);
@@ -91,7 +80,7 @@ function bookName(string) {
 
 async function booksApi(title) {
     let url = "https://www.googleapis.com/books/v1/volumes?q=" + title;
-    let response = await fetch(url);
+    let response = await fetch(encodeURI(url));
     let data = await response.json();
     // assuming that the first result in the array is accurate we return it
     return data.items[0].volumeInfo;
