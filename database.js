@@ -22,11 +22,27 @@ async function dbInsert(docs, collection) {
             "@collection": collection 
         }
     });        
-    cursor.forEach(function (book) {
-        console.log(book);
-    });
+    // cursor.forEach(function (book) {
+    //     console.log(book);
+    // });
+}
+
+async function dbRemoveAll(collection) {
+    await db.query({
+        query: `
+        FOR book IN @@collection
+            REMOVE book IN @@collection
+        `,
+        bindVars: { 
+            "@collection": collection 
+        }
+    });        
+    // cursor.forEach(function (book) {
+    //     console.log(book);
+    // });
 }
 
 module.exports = {
-    dbInsert
+    dbInsert,
+    dbRemoveAll
 };
