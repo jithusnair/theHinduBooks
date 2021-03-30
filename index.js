@@ -1,17 +1,18 @@
 const { chromium } = require('playwright');
 const fetch = require('node-fetch');
 // add db later
-const {dbInsert} = require('./database');
+const {dbInsert, dbRemoveAll} = require('./database');
 
 (async () => {
+    await dbRemoveAll('books');
     const browser = await chromium.launch();
-    await getBooksData(browser, 2, 1);    
+    await getBooksData(browser);    
     await browser.close();
 })();
 
-async function getBooksData(browser,stopPage, startPage = 1) {
-    if(startPage < 1) {
-        console.error("Start page cannot be less than 1");
+async function getBooksData(browser,stopPage = 1, startPage = 1) {
+    if(startPage < 1 || stopPage < 1) {
+        console.error("Start/stop page cannot be less than 1");
         return
     }
     let allbrowserContextPromises = [];
@@ -29,7 +30,7 @@ async function getBooksData(browser,stopPage, startPage = 1) {
     .then((pages) => {
         let allPagePromises = [];
         for (let i = 0; i < pages.length; i++) {
-            allPagePromises.push(getReviewedBooksInOnePage(pages[i], i + 1));
+            allPagePromises.push(getReviewedBooksInOnePage(pages[i], startPage + i));
         }
         return Promise.all(allPagePromises)
     })
