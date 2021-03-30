@@ -2,12 +2,30 @@ import {chromium} from 'playwright';
 import fetch from 'node-fetch';
 import {dbInsert, dbRemoveAll} from './database.js';
 
-(async () => {
-    await dbRemoveAll('books');
-    const browser = await chromium.launch();
-    const context = await browser.newContext();
-    await getBooksData(context, 10);  
-    await browser.close();
+(async (pagesToFetch=10) => {
+    try {
+        await dbRemoveAll('books');
+        const browser = await chromium.launch();
+        const context = await browser.newContext();
+        let docs = [];
+        let fetchedTillPage = 0;
+        for (let i = 1; i + 5 <= pagesToFetch; i += 5) {
+            let values = await getBooksData(context, i+5, i);
+            docs = docs.concat(values);
+            console.log(values.length);
+            fetchedTillPage = i + 5;
+        }
+        if(fetchedTillPage < pagesToFetch) {
+            let restOfTheValues = 
+                await getBooksData(context, pagesToFetch + 1, fetchedTillPage == 0 ? 1: fetchedTillPage);
+            docs = docs.concat(restOfTheValues);
+        }
+        console.log("Total books fetched:", docs.length);
+        await dbInsert(docs, 'books');
+        await browser.close();
+    } catch (error) {
+        console.error(error);
+    }
 })();
 
 async function getBooksData(context, stopPage = 1, startPage = 1) {
@@ -15,7 +33,8 @@ async function getBooksData(context, stopPage = 1, startPage = 1) {
         console.error("Start/stop page cannot be less than 1");
         return
     } else if (stopPage < startPage) {
-        console.error("Stop page cannot be less than Start page")
+        console.error("Stop page cannot be less than Start page");
+        return;
     }
     let allPagePromises = [];
     for (let i = startPage - 1; i < stopPage; i++) {
@@ -25,12 +44,8 @@ async function getBooksData(context, stopPage = 1, startPage = 1) {
     return Promise.all(allPagePromises)
     .then((values)=> {
         values = values.reduce(((accumulator, currentValue) => accumulator.concat(currentValue)), []);
-        console.log("Total books fetched:", values.length);
         return values;
-    })
-    .then(async (docs)=> {
-        await dbInsert(docs, 'books');
-    })
+    })   
     .catch((error) => {
         console.error(error);
     });
